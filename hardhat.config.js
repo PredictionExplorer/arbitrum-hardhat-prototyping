@@ -24,16 +24,16 @@ module.exports = {
 		hardhat: {
 			gas: "auto",
 		},
-      sepolia: {
-         url: `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-         accounts: [SEPOLIA_PRIVATE_KEY,],
+		sepolia: {
+			url: `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+			accounts: [SEPOLIA_PRIVATE_KEY,],
 			// gas: "auto",
-      },
-      arbitrumSepolia: {
-         url: "https://sepolia-rollup.arbitrum.io/rpc",
-         accounts: [ARBITRUM_SEPOLIA_PRIVATE_KEY,],
+		},
+		arbitrumSepolia: {
+			url: "https://sepolia-rollup.arbitrum.io/rpc",
+			accounts: [ARBITRUM_SEPOLIA_PRIVATE_KEY,],
 			// gas: "auto",
-      },
+		},
 		arbitrumOne: {
 			url: "https://arb1.arbitrum.io/rpc",
 			// accounts: (process.env.MAINNET_PRIVATE_KEY != undefined) ? [process.env.MAINNET_PRIVATE_KEY,] : [],

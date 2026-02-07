@@ -52,13 +52,16 @@ describe("BlockchainPropertiesTester", function() {
 			}
 
 			{
-				let latestBlock_ = await hre.ethers.provider.getBlock("latest");
+				let latestBlockFuture_ = hre.ethers.provider.getBlock("latest");
+				// let pendingBlockFuture_ = hre.ethers.provider.getBlock("pending");
+				let pendingBlockFuture_ = hre.ethers.provider.send("eth_getBlockByNumber", ["pending", false,]);
+				let results_ = await Promise.all([latestBlockFuture_, pendingBlockFuture_,]);
 				let dateTimeStamp2_ = Date.now();
 				console.info(
 					dateTimeStamp1_.toString(),
 					dateTimeStamp2_.toString(),
 					(dateTimeStamp2_ - dateTimeStamp1_).toString().padStart(4, " "),
-					latestBlock_.timestamp.toString(),
+					results_[0].timestamp.toString(),
 
 					// This should be equal `requestSendTimeOffsetWithinSecondInMilliSeconds_`.
 					// A greater value indicates a high latency.
@@ -69,7 +72,18 @@ describe("BlockchainPropertiesTester", function() {
 					// we are supposed to get that block.
 					// But to achieve the desired behavior,
 					// we have to set `requestSendTimeOffsetWithinSecondInMilliSeconds_` to a big value.
-					(dateTimeStamp1_ - latestBlock_.timestamp * 1000).toString().padStart(4, " ")
+					(dateTimeStamp1_ - results_[0].timestamp * 1000).toString().padStart(4, " "),
+					
+					Number(results_[1].timestamp).toString(),
+
+					// I would expect this to be positive with some values of `requestSendTimeOffsetWithinSecondInMilliSeconds_`,
+					// but this is always zero.
+					(Number(results_[1].timestamp) - results_[0].timestamp).toString(),
+
+					// results_[0].hash,
+					// results_[1].hash,
+					String(results_[0].baseFeePerGas),
+					String(BigInt(results_[1].baseFeePerGas))
 				);
 			}
 		}
@@ -101,30 +115,46 @@ describe("BlockchainPropertiesTester", function() {
 		const arbSys_ = await hre.ethers.getContractAt("ArbSys", "0x0000000000000000000000000000000000000064"/*, contracts_.ownerAcct*/);
 		const arbGasInfo_ = await hre.ethers.getContractAt("ArbGasInfo", "0x000000000000000000000000000000000000006C"/*, contracts_.ownerAcct*/);
 
-		{
+		for ( let counter_ = 1; counter_ <= 4; ++ counter_ ) {
 			let dateTimeStamp1_ = Date.now();
-			console.info(
-				await arbSys_.arbBlockNumber(), "\n",
-				await arbGasInfo_.getPricesInWei(), "\n",
-				await arbGasInfo_.getPricesInArbGas(), "\n",
-				await arbGasInfo_.getMinimumGasPrice(), "\n",
-				await arbGasInfo_.getL1BaseFeeEstimate(), "\n",
-				await arbGasInfo_.getL1GasPriceEstimate(), "\n",
-				await arbGasInfo_.getGasBacklog(), "\n",
-				await arbGasInfo_.getL1PricingSurplus(), "\n",
-				await arbGasInfo_.getL1PricingUnitsSinceUpdate(), "\n"
-			);
+			let results_ =
+				await Promise.all(
+					[
+						arbSys_.arbBlockNumber(),
+						arbGasInfo_.getPricesInWei(),
+						arbGasInfo_.getPricesInArbGas(),
+						arbGasInfo_.getMinimumGasPrice(),
+						arbGasInfo_.getL1BaseFeeEstimate(),
+						arbGasInfo_.getL1GasPriceEstimate(),
+						arbGasInfo_.getGasBacklog(),
+						arbGasInfo_.getL1PricingSurplus(),
+						arbGasInfo_.getL1PricingUnitsSinceUpdate(),
+					]
+				);
 			let dateTimeStamp2_ = Date.now();
-			console.info((dateTimeStamp2_ - dateTimeStamp1_).toString(), "\n");
+			console.info(
+				(dateTimeStamp2_ - dateTimeStamp1_).toString().padStart(4, " "), "\n",
+				results_[0].toString(), "\n",
+				results_[1].toString(), "\n",
+				results_[2].toString(), "\n",
+				results_[3].toString(), "\n",
+				results_[4].toString(), "\n",
+				results_[5].toString(), "\n",
+				results_[6].toString(), "\n",
+				results_[7].toString(), "\n",
+				results_[8].toString(), "\n"
+			);
 		}
+
+		await sleepForMilliSeconds(2000);
 
 		for ( let counter_ = 1; counter_ <= 20; ++ counter_ ) {
 			let dateTimeStamp1_ = Date.now();
 			let arbBlockNumberPromise_ = arbSys_.arbBlockNumber();
-			let latestBlockPromize_ = hre.ethers.provider.getBlock("latest");
+			let latestBlockPromise_ = hre.ethers.provider.getBlock("latest");
 			let getGasBacklogPromise_ = arbGasInfo_.getGasBacklog();
 			let getL1PricingUnitsSinceUpdatePromise_ = arbGasInfo_.getL1PricingUnitsSinceUpdate();
-			let results_ = await Promise.all([arbBlockNumberPromise_, latestBlockPromize_, getGasBacklogPromise_, getL1PricingUnitsSinceUpdatePromise_]);
+			let results_ = await Promise.all([arbBlockNumberPromise_, latestBlockPromise_, getGasBacklogPromise_, getL1PricingUnitsSinceUpdatePromise_]);
 			let dateTimeStamp2_ = Date.now();
 			console.info(
 				(dateTimeStamp2_ - dateTimeStamp1_).toString().padStart(4, " "),
@@ -151,6 +181,7 @@ describe("BlockchainPropertiesTester", function() {
 		// The use of this will prevent another request to estimate gas.
 		const myFeeData_ = {
 			// gasPrice: feeData_.gasPrice * 2n,
+			gasPrice: null,
 			maxFeePerGas: feeData_.maxFeePerGas,
 			maxPriorityFeePerGas: feeData_.maxPriorityFeePerGas,
 			gasLimit: 100_000n,
